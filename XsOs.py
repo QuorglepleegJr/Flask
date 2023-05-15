@@ -3,26 +3,44 @@ app = Flask(__name__)
 
 from random import choice
 
-def get_ai_moved_board(board, difficulty):
+global out
+out = open("Output.txt", "w")
 
-    picked_moves = []
-    potentials = [x for x in range(len(board)) if board[x] == "N"]
+def check_board(board):
 
-    if difficulty < 2:
+    if board[0] == board[4] and board[4] == board[8] and board[0] != "N": # Leading diagonal
 
-        random_move = choice(potentials)
+        return board[0]
+    
+    if board[2] == board[4] and board[4] == board[6] and board[2] != "N": # Other diagonal
 
-        picked_moves.append(random_move)
+        return board[2]
 
-    if difficulty > 0:
+    for x in range(3):
+
+        if board[3*x] == board[3*x+1] and board[3*x+1] == board[3*x+2] and board[3*x] != "N": # Horizontal
+
+            return board[x]
+
+        if board[x] == board[x+3] and board[x+3] == board[x+6] and board[x] != "N": # Vertical
+
+            return board[x]
         
-        player = ["X","O"][len(board.replace("N", ""))%2]
+    if len(board.replace("N", "")) == 9:
 
-        t = {}
+        return "Draw"
+    
+    return "None"
 
-def assess_board(board, player):
+def assess_board(board, player, lookup_table=None):
+
+    global out
 
     players = ["X","O"]
+
+    if lookup_table is None:
+
+        lookup_table = {}
 
     # Recursively generate all possible moves, analyse each one
     # Base case is an end, returns 0 for draws, 1 for wins, -1 for losses
@@ -33,49 +51,84 @@ def assess_board(board, player):
     if result != "None":
 
         if result == players[player]:
-
-            return 1
+            
+            lookup_table[board] = 1
+            return 1, lookup_table
         
         if result == "Draw":
 
-            return 0
+            lookup_table[board] = 0
+            return 0, lookup_table
 
-        return -1
+        lookup_table[board] = -1
+        return -1, lookup_table
 
-    scores = [None] * 10
+    scores = [None] * 9
     
     for move in [x for x in range(len(board)) if board[x] == "N"]:
 
-        scores[move] = -assess_board(board[:move] + players[player] + \
-            board[move+1:], (player+1)%2)
-    
-    return max([s for s in scores if s is not None])
+        if board[:move] + players[player] + board[move+1:] in lookup_table:
 
-def check_board(board):
-
-    if board[0] == board[4] == board[8] != "N": # Leading diagonal
-
-        return board[0]
-    
-    if board[2] == board[4] == board[6] != "N": # Other diagonal
-
-        return board[2]
-
-    for x in range(3):
-
-        if board[x] == board[x+1] == board[x+2] != "N": # Horizontal
-
-            return board[x]
-
-        if board[x] == board[x+3] == board[x+6] != "N": # Vertical
-
-            return board[x]
+            scores[move] = lookup_table[board[:move] + \
+                players[player] + board[move+1:]]
         
-    if len(board.replace("N", "")) == 9:
+        else:
 
-        return "Draw"
+            scores[move], lookup_table = assess_board(board[:move] + players[player] + \
+                board[move+1:], (player+1)%2, lookup_table)
+
+        scores[move] *= -1
+
+    out.write(f"{players[player]} {scores} {board}\n")
+    out.write(f"{board[0]} {board[1]} {board[2]} \n{board[3]} {board[4]} {board[5]} \n{board[6]} {board[7]} {board[8]}\n")
     
-    return "None"
+    score = max([s for s in scores if s is not None])
+    lookup_table[board] = score
+
+    return score, lookup_table
+
+def get_ai_moved_board(board, difficulty):
+
+    if check_board(board) != "None":
+
+        return board
+
+    picked_moves = []
+    potentials = [x for x in range(len(board)) if board[x] == "N"]
+    player = len(board.replace("N", ""))%2
+
+    if int(difficulty) < 2:
+
+        picked_moves.append(choice(potentials))
+
+    if int(difficulty) > 0:
+
+        scores = [None] * 9
+
+        for move in potentials:
+
+            print(potentials, move, scores, board, player)
+
+            scores[move] = assess_board(board[:move] + ["X","O"][player] + \
+                board[move+1:], (player+1)%2)[0]
+
+            scores[move] *= -1
+
+            print(move, scores[move])
+
+        high = max([x for x in scores if x is not None])
+
+        print(high, [x for x in scores if x == high])
+
+        picked_moves.append(choice([x for x in range(9) if scores[x] == high]))
+
+    move = choice(picked_moves)
+
+    print(picked_moves)
+
+    print(move, ["X","O"][player])
+
+    return board[:move] + ["X","O"][player] + board[move+1:]
 
 def display_board(board, win_check=True):
 
@@ -111,7 +164,7 @@ def home():
     <h1>Naughts and Crosses</h1>
     <p>Go to /new to begin <br>
     Attach ?ai=diff to /new to set play against ai's difficulty, 0 is easiest, 2 is hardest <br>
-    Attach ?starto=anything if you wish to start as Os against the ai, default difficulty 0
+    Attach ?starto=anything if you wish to start as Os against the ai. Does nothing on 2p <br>
     Attach ?move=num to a preexisting game to add your symbol in position num, given by:
     {display_board("012345678", False)} <br>
     N means no symbol is there yet</p>
@@ -132,7 +185,11 @@ def new_game():
     
     else:
 
-        start_o = "starto" in list(args.keys())
+        if "starto" in list(args.keys()):
+
+            return redirect(url_for('continue_ai_game', board = "NNNNNNNNN", difficulty = ai))
+
+        return redirect(url_for('continue_human_game', board = "NNNNNNNNN", difficulty = ai))
 
 
 @app.route('/play/<board>')
@@ -159,15 +216,31 @@ def continue_2pgame(board):
 
         return display_board(board)
 
-@app.route('/playai/<board>')
-def continue_ai_game(board):
+@app.route('/playai/<difficulty>/<board>')
+def continue_ai_game(board, difficulty):
 
-    return ''''''
+    return redirect(url_for('continue_human_game', board=get_ai_moved_board(board, difficulty), difficulty=difficulty))
 
-@app.route('/playhuman/<board>')
-def continue_human_game(board):
+@app.route('/playhuman/<difficulty>/<board>')
+def continue_human_game(board, difficulty):
 
-    return ''''''
+    try:
 
+        move = request.args["move"]
 
-print(assess_board("NNXNNNNNN", 1))
+        if move in ["0","1","2","3","4","5","6","7","8"]:
+
+            move = int(move)
+
+            if board[move] == "N":
+
+                board = board[:move] + \
+                    ["X","O"][len(board.replace("N", ""))%2] + board[move+1:]
+
+                return redirect(url_for('continue_ai_game', board = board, difficulty = difficulty))
+        
+        return "<h1>Invalid Move</h1>" + display_board(board)
+
+    except KeyError:
+
+        return display_board(board)
