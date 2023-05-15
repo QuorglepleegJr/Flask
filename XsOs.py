@@ -20,11 +20,7 @@ def get_ai_moved_board(board, difficulty):
 
         t = {}
 
-def assess_board(board, player, recursion=0):
-
-    recursion += 1
-
-    print(recursion)
+def assess_board(board, player):
 
     players = ["X","O"]
 
@@ -33,10 +29,6 @@ def assess_board(board, player, recursion=0):
     # Each non-base takes the minimum of the previous ones
 
     result = check_board(board)
-
-    if recursion == 6:
-
-        return "E"
 
     if result != "None":
 
@@ -54,13 +46,10 @@ def assess_board(board, player, recursion=0):
     
     for move in [x for x in range(len(board)) if board[x] == "N"]:
 
-        scores[move] = assess_board(board[:move] + players[player] + \
-            board[move+1:], (player+1)%2, recursion)
+        scores[move] = -assess_board(board[:move] + players[player] + \
+            board[move+1:], (player+1)%2)
     
-    print(move)
-
-    return scores
-
+    return max([s for s in scores if s is not None])
 
 def check_board(board):
 
@@ -146,8 +135,6 @@ def new_game():
         start_o = "starto" in list(args.keys())
 
 
-
-
 @app.route('/play/<board>')
 def continue_2pgame(board):
 
@@ -183,4 +170,4 @@ def continue_human_game(board):
     return ''''''
 
 
-print(assess_board("XXNNONNNO", 1))
+print(assess_board("NNXNNNNNN", 1))
