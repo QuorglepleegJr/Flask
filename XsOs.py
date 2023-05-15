@@ -1,6 +1,66 @@
 from flask import Flask, redirect, url_for, request
 app = Flask(__name__)
 
+from random import choice
+
+def get_ai_moved_board(board, difficulty):
+
+    picked_moves = []
+    potentials = [x for x in range(len(board)) if board[x] == "N"]
+
+    if difficulty < 2:
+
+        random_move = choice(potentials)
+
+        picked_moves.append(random_move)
+
+    if difficulty > 0:
+        
+        player = ["X","O"][len(board.replace("N", ""))%2]
+
+        t = {}
+
+def assess_board(board, player, recursion=0):
+
+    recursion += 1
+
+    print(recursion)
+
+    players = ["X","O"]
+
+    # Recursively generate all possible moves, analyse each one
+    # Base case is an end, returns 0 for draws, 1 for wins, -1 for losses
+    # Each non-base takes the minimum of the previous ones
+
+    result = check_board(board)
+
+    if recursion == 6:
+
+        return "E"
+
+    if result != "None":
+
+        if result == players[player]:
+
+            return 1
+        
+        if result == "Draw":
+
+            return 0
+
+        return -1
+
+    scores = [None] * 10
+    
+    for move in [x for x in range(len(board)) if board[x] == "N"]:
+
+        scores[move] = assess_board(board[:move] + players[player] + \
+            board[move+1:], (player+1)%2, recursion)
+    
+    print(move)
+
+    return scores
+
 
 def check_board(board):
 
@@ -87,6 +147,7 @@ def new_game():
 
 
 
+
 @app.route('/play/<board>')
 def continue_2pgame(board):
 
@@ -103,7 +164,7 @@ def continue_2pgame(board):
                 board = board[:move] + \
                     ["X","O"][len(board.replace("N", ""))%2] + board[move+1:]
 
-                return redirect(url_for('continue_game', board = board))
+                return redirect(url_for('continue_2pgame', board = board))
         
         return "<h1>Invalid Move</h1>" + display_board(board)
 
@@ -120,3 +181,6 @@ def continue_ai_game(board):
 def continue_human_game(board):
 
     return ''''''
+
+
+print(assess_board("XXNNONNNO", 1))
