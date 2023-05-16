@@ -3,9 +3,6 @@ app = Flask(__name__)
 
 from random import choice
 
-global out
-out = open("Output.txt", "w")
-
 def check_board(board):
 
     if board[0] == board[4] and board[4] == board[8] and board[0] != "N": # Leading diagonal
@@ -78,9 +75,6 @@ def assess_board(board, player, lookup_table=None):
                 board[move+1:], (player+1)%2, lookup_table)
 
         scores[move] *= -1
-
-    out.write(f"{players[player]} {scores} {board}\n")
-    out.write(f"{board[0]} {board[1]} {board[2]} \n{board[3]} {board[4]} {board[5]} \n{board[6]} {board[7]} {board[8]}\n")
     
     score = max([s for s in scores if s is not None])
     lookup_table[board] = score
