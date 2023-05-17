@@ -1,12 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Colour Changer Full Access</title>
+
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
 </head>
 <body>
-    
+
+    <div class="container {{colour}}">
+        <h5>Welcome to the colour changer!</h5>
+        <p>Logged in as {{username}}</p>
+        <form action="" method="POST" class="form-inline">
+            {{ form.csrf }}
+            <div class="input-field col s12">
+                {{form.base}}
+            </div>
+            <div class="input-field col s14">
+                {{form.modify}}
+            </div>
+            <div class="input-field col s16">
+                {{form.strength}}
+            </div>
+            <button type="submit" class="btn btn-primary">Colour!</button>
+        </form>
+    </div>
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <script>M.AutoInit()</script>
+
 </body>
 </html>

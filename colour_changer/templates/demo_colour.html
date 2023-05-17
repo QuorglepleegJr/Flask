@@ -12,25 +12,23 @@
 
 </head>
 <body>
-   
-    <!-- Compiled and minified JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-        var elems = document.querySelectorAll('select');
-        var instances = M.FormSelect.init(elems, options);
-        });
-    </script>
-
-    <div class="container">
+    <div class="container {{colour}}">
         <h5>Welcome to the colour changer's Demo!</h5>
         <p>Log in to access colour modifications.</p>
         <form action="" method="POST" class="form-inline">
             {{ form.csrf }}
-            <select name="base" id="base_select">Base:</select>
+            <div class="input-field col s12">
+                {{form.base}}
+            </div>
+            <button type="submit" class="btn btn-primary">Colour!</button>
         </form>
     </div>
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <script>M.AutoInit()</script>
 
 </body>
 </html>
