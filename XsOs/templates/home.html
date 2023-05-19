@@ -22,14 +22,18 @@
         <form action="">
             {{ form.csrf }}
             <label>
-                {{ form.ai_toggle }}
-                {{ form.ai_toggle.label }}
+                <p>
+                    <label>{{ form.ai_toggle.label }}></label>
+                    {{ form.ai_toggle }}
+                    <span></span>
+                </p>
             </label>
             
             <!--{% if form.ai_toggle.data == "true" %}
             {{ form.ai_form }}
             {% endif %}-->
             <button type="submit" class="btn btn-primary">Go!</button>
+        </form>
     </div>
         
 </body>
