@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colour Changer Home Page</title>
+
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+</head>
+<body>
+   
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <div class="container">
+        <h3>Welcome to the Noughts and Crosses Web App!</h3>
+        <p>Select an option below to begin.</p>
+        <form action="">
+            {{ form.csrf }}
+            <label>
+                {{ form.ai_toggle }}
+                {{ form.ai_toggle.label }}
+            </label>
+            
+            <!--{% if form.ai_toggle.data == "true" %}
+            {{ form.ai_form }}
+            {% endif %}-->
+            <button type="submit" class="btn btn-primary">Go!</button>
+    </div>
+        
+</body>
+</html>
