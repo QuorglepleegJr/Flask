@@ -47,7 +47,6 @@ class RegisterForm(LoginForm):
     realname = StringField("Real Name")
     confirm_pass = StringField("Re-enter Password")
     code = StringField("Access Code")
-    submit = SubmitField("Register")
 
 @app.route('/', methods=['GET', 'POST'])
 def welcome():
@@ -99,15 +98,23 @@ def login():
 
     login_form = LoginForm()
 
+    print(login_form, login_form.is_submitted())
+
     if login_form.is_submitted():
 
+        print("Entered form:")
+
         username = login_form.username.data
+
+        print("Username:", username)
         
         if not User.exists(username):
 
             return render_template("login.html", form=login_form, error="User does not exist.")
         
         password = login_form.password.data
+
+        print("Password:", password)
 
         if password != User.get_password(username):
 
