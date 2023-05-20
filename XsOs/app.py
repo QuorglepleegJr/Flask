@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request
+from flask import Flask, render_template, redirect, url_for, request, session
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, SelectField, BooleanField, FormField
 
@@ -35,8 +35,6 @@ def check_board(board):
 
 def assess_board(board, player, lookup_table=None):
 
-    global out
-
     players = ["X","O"]
 
     if lookup_table is None:
@@ -44,8 +42,11 @@ def assess_board(board, player, lookup_table=None):
         lookup_table = {}
 
     # Recursively generate all possible moves, analyse each one
-    # Base case is an end, returns 0 for draws, 1 for wins, -1 for losses
-    # Each non-base takes the minimum of the previous ones
+    # Base case is an end, returns "1" for draws, "2" for wins, "0" for losses
+    # Each non-base takes the maximum of the inverted ints of the previous ones
+    # Additionally, the later digits in the string list the number of moves
+    # the opponent can make from it that lead to a better outcome for whoever moves
+    # i.e.: {worst case}.{estimated likelyhood of better}*
 
     result = check_board(board)
 
@@ -53,16 +54,16 @@ def assess_board(board, player, lookup_table=None):
 
         if result == players[player]:
             
-            lookup_table[board] = 1
-            return 1, lookup_table
+            lookup_table[board] = "2"
+            return "2", lookup_table
         
         if result == "Draw":
 
-            lookup_table[board] = 0
-            return 0, lookup_table
+            lookup_table[board] = "1"
+            return "1", lookup_table
 
-        lookup_table[board] = -1
-        return -1, lookup_table
+        lookup_table[board] = "0"
+        return "0", lookup_table
 
     scores = [None] * 9
     
@@ -77,10 +78,22 @@ def assess_board(board, player, lookup_table=None):
 
             scores[move], lookup_table = assess_board(board[:move] + players[player] + \
                 board[move+1:], (player+1)%2, lookup_table)
-
-        scores[move] *= -1
     
-    score = max([s for s in scores if s is not None])
+    score = str(min([float(s) for s in scores if s is not None]))
+
+    added = str(len([s for s in scores if s is not None and float(s) >= float(score)]))
+
+    if "." in score:
+
+        score = score.split(".")
+        score = score[0]+"."+added+score[1]
+    
+    else:
+
+        score += added
+
+    score = str(2-float(score))
+
     lookup_table[board] = score
 
     return score, lookup_table
@@ -105,26 +118,29 @@ def get_ai_moved_board(board, difficulty):
 
         for move in potentials:
 
-            print(potentials, move, scores, board, player)
+            #print(potentials, move, scores, board, player)
 
             scores[move] = assess_board(board[:move] + ["X","O"][player] + \
                 board[move+1:], (player+1)%2)[0]
 
-            scores[move] *= -1
+            scores[move] = str(2-float(scores[move]))
 
-            print(move, scores[move])
+            #print(move, scores[move])
 
         high = max([x for x in scores if x is not None])
 
-        print(high, [x for x in scores if x == high])
+        print(high, [x for x in range(9) if scores[x] == high])
 
+        print(scores)
+
+        
         picked_moves.append(choice([x for x in range(9) if scores[x] == high]))
 
     move = choice(picked_moves)
 
-    print(picked_moves)
+    #print(picked_moves)
 
-    print(move, ["X","O"][player])
+    #print(move, ["X","O"][player])
 
     return board[:move] + ["X","O"][player] + board[move+1:]
 
@@ -262,3 +278,5 @@ def continue_human_game(board, difficulty):
     except KeyError:
 
         return display_board(board)
+
+print(get_ai_moved_board("NNNNNNNNN", 2))
