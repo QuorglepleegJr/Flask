@@ -133,7 +133,10 @@ def get_ai_moved_board(board, difficulty):
 
         print(scores)
 
-        
+        '''
+        FIX THIS, PREDICTING GUARENTEED LOSS FOR X IF PLAYED PERFECTLY
+        '''
+
         picked_moves.append(choice([x for x in range(9) if scores[x] == high]))
 
     move = choice(picked_moves)
