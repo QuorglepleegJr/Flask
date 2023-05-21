@@ -17,17 +17,19 @@
 
     <p>{{ error }}</p>
 
-    <form action="" class="form-inline">
+    <form action="" method="POST" class="form-inline">
 
         {{ form.csrf }}
+        {{ form.username.label }}
         {{ form.username }}
+        {{ form.password.label }}
         {{ form.password }}
-        <button 
+        {{ form.submit }}
     
     </form>
 
     <p>New member?
-    <a href="register">Register</a>
+    <a href="register">Register.</a>
     </p>
 
     <!-- Compiled and minified JavaScript -->

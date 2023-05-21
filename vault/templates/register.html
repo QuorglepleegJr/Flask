@@ -16,20 +16,26 @@
     <h5>Register for the machine</h5>
     <p>{{ error }}</p>
 
-    <form action="" class="form-inline">
+    <form action="" method="POST" class="form-inline">
 
         {{ form.csrf }}
+        {{ form.realname.label }}
         {{ form.realname }}
+        {{ form.username.label }}
         {{ form.username }}
+        {{ form.password.label }}
         {{ form.password }}
+        {{ form.confirm_pass.label }}
         {{ form.confirm_pass }}
+        {{ form.code.label }}
         {{ form.code }}
         {{ form.submit }}
     
     </form>
 
-    <p>Already a member?</p>
-    <a href="login">Login</a>
+    <p>Already a member?
+    <a href="login">Login.</a>
+    </p>
 
     <!-- Compiled and minified JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>

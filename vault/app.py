@@ -8,31 +8,52 @@ app.config['SECRET_KEY'] = '19dnoasb3a'
 
 ACCESS_CODE = "Pink"
 
-class User():
+class UserDB():
+    
+    '''
+    Static class storing records of users
+    Shouldn't be instatiated (won't throw an error, but does nothing)
+    The admin username cannot be deleted, although it contains no extra permissions,
+        it acts as a proof-of-concept.
+    '''
 
-    __users = {}
+    __users = {"admin":("Administrator", "pass")}
 
     def exists(username):
 
-        return User.__users.get(username, None) is not None
+        print(UserDB.__users)
+
+        return UserDB.__users.get(username, None) is not None
 
     def get_password(username):
 
-        desired = User.__users.get(username, None)
+        desired = UserDB.__users.get(username, None)
 
         if desired is not None:
 
-            return desired.__password
+            return desired[1]
     
         return None
 
-    def __init__(self, realname, username, password):
+    def get_realname(username):
 
-        self.__realname = realname
-        self.__username = username
-        self.__password = password
+        desired = UserDB.__users.get(username, None)
 
-        User.__users[username] = self
+        if desired is not None:
+
+            return desired[0]
+    
+        return None
+
+    def add(realname, username, password):
+
+        UserDB.__users[username] = (realname, password)
+
+    def remove(username):
+
+        if UserDB.exists(username) and username != "admin":
+
+            UserDB.__users.pop(username)
     
     
 
@@ -47,13 +68,20 @@ class RegisterForm(LoginForm):
     realname = StringField("Real Name")
     confirm_pass = StringField("Re-enter Password")
     code = StringField("Access Code")
+    submit = SubmitField("Register")
 
 @app.route('/', methods=['GET', 'POST'])
 def welcome():
 
-    # Unimplemented
+    if 'username' in session:
 
-    return ''''''
+        username = session['username']
+
+        if UserDB.exists(username):
+
+            return render_template("welcome.html", user=UserDB.get_realname(username))
+
+    return redirect(url_for("login"))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -70,7 +98,7 @@ def register():
 
         username = register_form.username.data
 
-        if User.exists(username):
+        if UserDB.exists(username):
 
             return render_template("register.html", form=register_form, error="Username already exists.")
         
@@ -83,9 +111,9 @@ def register():
         
         realname = register_form.realname.data
 
-        User(realname, username, password)
+        UserDB.add(realname, username, password)
 
-        session["username"] = username
+        session['username'] = username
 
         return redirect(url_for("welcome"))
 
@@ -105,18 +133,14 @@ def login():
         print("Entered form:")
 
         username = login_form.username.data
-
-        print("Username:", username)
         
-        if not User.exists(username):
+        if not UserDB.exists(username):
 
             return render_template("login.html", form=login_form, error="User does not exist.")
         
         password = login_form.password.data
 
-        print("Password:", password)
-
-        if password != User.get_password(username):
+        if password != UserDB.get_password(username):
 
             return render_template("login.html", form=login_form, error="Incorrect password.")
 
@@ -128,4 +152,22 @@ def login():
 
         return render_template("login.html", form=login_form, error="")
 
-User("The Administrator", "admin", "monkeyintospace")
+@app.route('/logout', methods=['GET','POST'])
+def logout():
+
+    if 'username' in session:
+
+        session.pop('username')
+
+    return redirect(url_for("login")) 
+
+@app.route('/delete', methods=['GET','POST'])
+def delete():
+
+    if 'username' in session:
+
+        username = session.pop('username')
+
+        UserDB.remove(username)
+
+    return redirect(url_for("login"))
