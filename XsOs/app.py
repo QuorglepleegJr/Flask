@@ -6,6 +6,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'aoin10anbf888'
 
 from random import choice
+from math import floor
 
 def check_board(board):
 
@@ -44,7 +45,7 @@ def assess_board(board, player, lookup_table=None):
     # Recursively generate all possible moves, analyse each one
     # Base case is an end, returns "1" for draws, "2" for wins, "0" for losses
     # Each non-base takes the maximum of the inverted ints of the previous ones
-    # Additionally, the later digits in the string list the number of moves
+    # Additionally, the later digit in the string lists the number of moves
     # the opponent can make from it that lead to a better outcome for whoever moves
     # i.e.: {worst case}.{estimated likelyhood of better}*
 
@@ -79,20 +80,12 @@ def assess_board(board, player, lookup_table=None):
             scores[move], lookup_table = assess_board(board[:move] + players[player] + \
                 board[move+1:], (player+1)%2, lookup_table)
     
-    score = str(min([float(s) for s in scores if s is not None]))
+    score = min([int(s.split(".")[0]) for s in scores if s is not None])
 
-    added = str(len([s for s in scores if s is not None and float(s) >= float(score)]))
+    added = str(len([s for s in scores if s is not None and floor(float(s)+0.1) > score])) 
+    # +0.1 should ensure no f.p error whilst not going over, as the original float shouldn't go over .8
 
-    if "." in score:
-
-        score = score.split(".")
-        score = score[0]+"."+added+score[1]
-    
-    else:
-
-        score += added
-
-    score = str(2-float(score))
+    score = str(2-score) + "." + str(9-int(added))
 
     lookup_table[board] = score
 
@@ -120,14 +113,15 @@ def get_ai_moved_board(board, difficulty):
 
             #print(potentials, move, scores, board, player)
 
-            scores[move] = assess_board(board[:move] + ["X","O"][player] + \
-                board[move+1:], (player+1)%2)[0]
+            scores[move], lookup = assess_board(board[:move] + ["X","O"][player] + \
+                board[move+1:], (player+1)%2)
 
-            scores[move] = str(2-float(scores[move]))
+            print(lookup)
 
             #print(move, scores[move])
 
-        high = max([x for x in scores if x is not None])
+        high = min([x for x in scores if x is not None])
+        # Min used because this is scores for the enemy within the move
 
         print(high, [x for x in range(9) if scores[x] == high])
 
@@ -135,6 +129,7 @@ def get_ai_moved_board(board, difficulty):
 
         '''
         FIX THIS, PREDICTING GUARENTEED LOSS FOR X IF PLAYED PERFECTLY
+        I'VE TRIED PAST ME, IT'S TAKING A LOT
         '''
 
         picked_moves.append(choice([x for x in range(9) if scores[x] == high]))
