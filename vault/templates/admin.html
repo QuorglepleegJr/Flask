@@ -13,58 +13,60 @@
 </head>
 <body>
 
-    <h5>Welcome to the control panel, {{ user }}</h5>
+    <div class="container">
+
+        <h5>Welcome to the control panel, {{ user }}</h5>
+        
+        <p>
+            Records: <br>
+        </p>
+        <p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Realname</th>
+                        <th>Password</th>
+                        <th>Permissions</th>
+                        <th>Change permissions</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+        
+                <tbody>
+                    <tr>
+                        {% for user in users %}
+
+                        <td>{{ user[0] }}</td>
+                        <td>{{ user[1] }}</td>
+                        <td>{{ user[2] }}</td>
+                        <td>{{ user[3] }}</td>
+            
+                        {% if user[3] == 1 %}
+            
+                            <td><a href="demote?user={{ user[0] }}">Demote</a></td>
+                        
+                        {% else %}
+            
+                            <td><a href="promote?user={{ user[0] }}">Promote</a></td>
+                        
+                        {% endif %}
+            
+                        <td><a href="delete_user?user={{ user[0] }}">Delete</a></td>
+            
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+
+            
+
+        </p>
+
+        <a href="content">Return to standard view.</a>
     
-    <p>
-        Records: <br>
-
-        
-    </p>
-    <p>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Realname</th>
-                    <th>Password</th>
-                    <th>Permissions</th>
-                    <th>Change permissions</th>
-                    <th>Delete</th>
-                </tr>
-            </thead>
-    
-            <tbody>
-                <tr>
-                    {% for user in users %}
-
-                    <td>{{ user[0] }}</td>
-                    <td>{{ user[1] }}</td>
-                    <td>{{ user[2] }}</td>
-                    <td>{{ user[3] }}</td>
-        
-                    {% if user[3] == 1 %}
-        
-                        <td><a href="demote?user={{ user[0] }}">Demote</a></td>
-                    
-                    {% else %}
-        
-                        <td><a href="promote?user={{ user[0] }}">Promote</a></td>
-                    
-                    {% endif %}
-        
-                    <td><a href="delete_user?user={{ user[0] }}">Delete</a></td>
-        
-                    {% endfor %}
-                </tr>
-            </tbody>
-        </table>
-
-        
-
-    </p>
-
-    <a href="content">Return to standard view.</a>
+    </div>
 
     <!-- Compiled and minified JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
