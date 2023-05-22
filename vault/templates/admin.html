@@ -18,27 +18,49 @@
     <p>
         Records: <br>
 
-        Username | Realname | Password | Permissions | Change permissions | Delete
+        
     </p>
     <p>
 
-        {% for user in users %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Realname</th>
+                    <th>Password</th>
+                    <th>Permissions</th>
+                    <th>Change permissions</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+    
+            <tbody>
+                <tr>
+                    {% for user in users %}
 
-            {{ user[0] }} {{ user[1] }} {{ user[2] }} {{ user[3] }}
+                    <td>{{ user[0] }}</td>
+                    <td>{{ user[1] }}</td>
+                    <td>{{ user[2] }}</td>
+                    <td>{{ user[3] }}</td>
+        
+                    {% if user[3] == 1 %}
+        
+                        <td><a href="demote?user={{ user[0] }}">Demote</a></td>
+                    
+                    {% else %}
+        
+                        <td><a href="promote?user={{ user[0] }}">Promote</a></td>
+                    
+                    {% endif %}
+        
+                    <td><a href="delete_user?user={{ user[0] }}">Delete</a></td>
+        
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
 
-            {% if user[3] == 1 %}
-
-                <a href="demote?user={{ user[0] }}">Demote</a>
-            
-            {% else %}
-
-                <a href="promote?user={{ user[0] }}">Promote</a>
-            
-            {% endif %}
-
-            <a href="delete_user?user={{ user[0] }}">Delete</a> <br>
-
-        {% endfor %}
+        
 
     </p>
 
