@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"> 
+
+</head>
+<body>
+
+    <h5>Welcome to the control panel, {{ user }}</h5>
+    
+    <p>
+        Records: <br>
+
+        Username | Realname | Password | Permissions | Change permissions | Delete
+    </p>
+    <p>
+
+        {% for user in users %}
+
+            {{ user[0] }} {{ user[1] }} {{ user[2] }} {{ user[3] }}
+
+            {% if user[3] == 1 %}
+
+                <a href="demote?user={{ user[0] }}">Demote</a>
+            
+            {% else %}
+
+                <a href="promote?user={{ user[0] }}">Promote</a>
+            
+            {% endif %}
+
+            <a href="delete_user?user={{ user[0] }}">Delete</a>
+
+        {% endfor %}
+
+    </p>
+
+    <a href="content">Return to standard view.</a>
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    
+</body>
+</html>

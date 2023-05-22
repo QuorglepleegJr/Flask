@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, session
+from flask import Flask, render_template, redirect, url_for, session, request
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 
@@ -22,13 +22,12 @@ class UserDB():
 
     __connection = None
     __cursor = None
-    __protected_users = set()
 
     def initialise():
 
         # Connect to the DB
 
-        UserDB.__connection = connect("vault/users.db")
+        UserDB.__connection = connect("vault/users.db", check_same_thread=False)
 
         UserDB.__cursor = UserDB.__connection.cursor()
 
@@ -44,7 +43,8 @@ class UserDB():
                 CREATE TABLE users(
                 USERNAME TEXT PRIMARY KEY NOT NULL,
                 REALNAME TEXT NOT NULL,
-                PASSWORD TEXT NOT NULL
+                PASSWORD TEXT NOT NULL,
+                ADMIN BOOLEAN
                 );
                 ''')
         
@@ -58,12 +58,8 @@ class UserDB():
 
             UserDB.__cursor.execute('''
                 INSERT INTO users VALUES
-                    ('admin', 'Administrator', 'pass');
+                    ('admin', 'Administrator', 'pass', 1);
                 ''')
-        
-        # Set admin entry as protected
-
-        UserDB.__protected_users.add("admin")
         
         UserDB.__connection.commit()
     
@@ -78,7 +74,7 @@ class UserDB():
 
             UserDB.__cursor.execute('''
                 SELECT count(username) FROM users WHERE username=?;
-                ''', username)
+                ''', (username,))
             
             return UserDB.__cursor.fetchone()[0] == 1
         
@@ -86,6 +82,25 @@ class UserDB():
 
             print(f"Caution: Operational Error found when checking if entry {username} exists")
             print("DETAILS:", op_e)
+    
+    def is_admin(username):
+
+        if UserDB.exists(username):
+
+            try:
+
+                UserDB.__cursor.execute('''
+                    SELECT admin FROM users WHERE username=?;
+                    ''', (username,))
+                
+                return UserDB.__cursor.fetchone()[0] == 1
+            
+            except OperationalError as op_e:
+
+                print(f"Caution: Operational Error found when checking if entry {username} is an administrator")
+                print("DETAILS:", op_e)
+        
+        return None
 
     def get_password(username):
 
@@ -95,7 +110,7 @@ class UserDB():
 
                 UserDB.__cursor.execute('''
                     SELECT password FROM users WHERE username=?;
-                    ''', username)
+                    ''', (username,))
                 
                 return UserDB.__cursor.fetchone()[0]
             
@@ -114,7 +129,7 @@ class UserDB():
 
                 UserDB.__cursor.execute('''
                     SELECT realname FROM users WHERE username=?;
-                    ''', username)
+                    ''', (username,))
                 
                 return UserDB.__cursor.fetchone()[0]
             
@@ -125,14 +140,55 @@ class UserDB():
     
         return None
 
+    def get_all_records():
+
+        try:
+
+            UserDB.__cursor.execute('''
+                SELECT * FROM users;
+                ''')
+
+            return UserDB.__cursor.fetchall()
+    
+        except OperationalError as op_e:
+
+            print(f"Caution: Operational Error found when retreiving all records")
+            print("DETAILS:", op_e)
+
+    def promote(username):
+
+        try:
+
+            UserDB.__cursor.execute('''
+                UPDATE users SET admin=1 WHERE username=?;
+                ''', (username,))
+        
+        except OperationalError as op_e:
+
+            print(f"Caution: Operational Error found when promoting entry {username} to admin")
+            print("DETAILS:", op_e)
+    
+    def demote(username):
+
+        try:
+
+            UserDB.__cursor.execute('''
+                UPDATE users SET admin=0 WHERE username=?;
+                ''', (username,))
+        
+        except OperationalError as op_e:
+
+            print(f"Caution: Operational Error found when demoting entry {username} from admin")
+            print("DETAILS:", op_e)
+
     def add(realname, username, password):
 
         try:
 
             UserDB.__cursor.execute('''
                 INSERT INTO users VALUES
-                    (?, ?, ?);
-                ''', (username, realname, password))
+                    (?, ?, ?, False);
+                ''', (username, realname, password,))
             
             UserDB.__connection.commit()
         
@@ -143,13 +199,13 @@ class UserDB():
 
     def remove(username):
 
-        if UserDB.exists(username) and username not in UserDB.__protected_users:
+        if UserDB.exists(username):
 
             try:
                 
                 UserDB.__cursor.execute('''
                     DELETE FROM users WHERE username=?;
-                    ''', username)
+                    ''', (username,))
                 
                 UserDB.__connection.commit()
             
@@ -171,8 +227,13 @@ class RegisterForm(LoginForm):
     code = StringField("Access Code")
     submit = SubmitField("Register")
 
-@app.route('/', methods=['GET', 'POST'])
-def welcome():
+@app.route('/', methods=['GET','POST'])
+def home():
+
+    return redirect(url_for('content'))
+
+@app.route('/content', methods=['GET', 'POST'])
+def content():
 
     if 'username' in session:
 
@@ -180,7 +241,8 @@ def welcome():
 
         if UserDB.exists(username):
 
-            return render_template("welcome.html", user=UserDB.get_realname(username))
+            return render_template("content.html", \
+                user=UserDB.get_realname(username), admin=UserDB.is_admin(username))
 
     return redirect(url_for("login"))
 
@@ -216,7 +278,7 @@ def register():
 
         session['username'] = username
 
-        return redirect(url_for("welcome"))
+        return redirect(url_for("content"))
 
     else:
 
@@ -243,11 +305,63 @@ def login():
 
         session["username"] = username
 
-        return redirect(url_for("welcome"))
+        return redirect(url_for("content"))
 
     else:
 
         return render_template("login.html", form=login_form, error="")
+
+@app.route('/admin', methods=['GET','POST'])
+def admin():
+
+    if 'username' in session:
+
+        if UserDB.is_admin(session['username']):
+
+            info = UserDB.get_all_records()
+
+            return render_template("admin.html", users=info)
+    
+    return redirect(url_for("login"))
+
+@app.route('/delete_user', methods=['GET','POST'])
+def delete_user():
+
+    if 'username' in session:
+
+        if UserDB.is_admin(session['username']):
+
+            if "user" in request.args:
+
+                UserDB.remove(request.args['user'])
+    
+    return redirect(url_for("admin"))
+
+@app.route('/promote', methods=['GET','POST'])
+def promote():
+
+    if 'username' in session:
+
+        if UserDB.is_admin(session['username']):
+
+            if "user" in request.args:
+
+                UserDB.promote(request.args['user'])
+    
+    return redirect(url_for("admin"))
+
+@app.route('/demote', methods=['GET','POST'])
+def demote():
+
+    if 'username' in session:
+
+        if UserDB.is_admin(session['username']):
+
+            if "user" in request.args:
+
+                UserDB.demote(request.args['user'])
+    
+    return redirect(url_for("admin"))
 
 @app.route('/logout', methods=['GET','POST'])
 def logout():
