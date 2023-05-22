@@ -227,11 +227,7 @@ def login():
 
     login_form = LoginForm()
 
-    print(login_form, login_form.is_submitted())
-
     if login_form.is_submitted():
-
-        print("Entered form:")
 
         username = login_form.username.data
         
