@@ -17,20 +17,24 @@
 
     <p>{{ error }}</p>
 
-    <form action="" method="POST" class="form-inline">
+    <div class="container">
 
-        {{ form.csrf }}
-        {{ form.username.label }}
-        {{ form.username }}
-        {{ form.password.label }}
-        {{ form.password }}
-        {{ form.submit }}
+        <form action="" method="POST" class="form-inline">
+
+            {{ form.csrf }}
+            {{ form.username.label }}
+            {{ form.username }}
+            {{ form.password.label }}
+            {{ form.password }}
+            {{ form.submit }}
+        
+        </form>
+
+        <p>New member?
+        <a href="register">Register.</a>
+        </p>
     
-    </form>
-
-    <p>New member?
-    <a href="register">Register.</a>
-    </p>
+    </div>
 
     <!-- Compiled and minified JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>

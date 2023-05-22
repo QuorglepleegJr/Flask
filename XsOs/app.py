@@ -55,39 +55,26 @@ def assess_board(board, player, lookup_table=None):
 
         if result == players[player]:
             
-            lookup_table[board] = "2"
-            return "2", lookup_table
+            lookup_table[board] = 20
+            return 20, lookup_table
         
         if result == "Draw":
 
-            lookup_table[board] = "1"
-            return "1", lookup_table
+            lookup_table[board] = 10
+            return 10, lookup_table
 
-        lookup_table[board] = "0"
-        return "0", lookup_table
+        lookup_table[board] = 0
+        return 0, lookup_table
 
     scores = [None] * 9
+
+    for move in [x for x in range(9) if board[x] == "N"]:
+
+        temp_board = board[:move] + player + board[move+1:]
+
+        scores[move] = assess_board(temp_board, (player+1)%2)
     
-    for move in [x for x in range(len(board)) if board[x] == "N"]:
-
-        if board[:move] + players[player] + board[move+1:] in lookup_table:
-
-            scores[move] = lookup_table[board[:move] + \
-                players[player] + board[move+1:]]
-        
-        else:
-
-            scores[move], lookup_table = assess_board(board[:move] + players[player] + \
-                board[move+1:], (player+1)%2, lookup_table)
-    
-    score = min([int(s.split(".")[0]) for s in scores if s is not None])
-
-    added = str(len([s for s in scores if s is not None and floor(float(s)+0.1) > score])) 
-    # +0.1 should ensure no f.p error whilst not going over, as the original float shouldn't go over .8
-
-    score = str(2-score) + "." + str(9-int(added))
-
-    lookup_table[board] = score
+    score = 0
 
     return score, lookup_table
 

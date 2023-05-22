@@ -2,6 +2,9 @@ from flask import Flask, render_template, redirect, url_for, session
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 
+from sqlite3 import connect, OperationalError
+
+from sys import exit
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '19dnoasb3a'
@@ -11,51 +14,149 @@ ACCESS_CODE = "Pink"
 class UserDB():
     
     '''
-    Static class storing records of users
-    Shouldn't be instatiated (won't throw an error, but does nothing)
+    Static class storing records of users.
+    Shouldn't be instatiated (won't throw an error, but does nothing).
     The admin username cannot be deleted, although it contains no extra permissions,
         it acts as a proof-of-concept.
     '''
 
-    __users = {"admin":("Administrator", "pass")}
+    __connection = None
+    __cursor = None
+    __protected_users = set()
+
+    def initialise():
+
+        # Connect to the DB
+
+        UserDB.__connection = connect("vault/users.db")
+
+        UserDB.__cursor = UserDB.__connection.cursor()
+
+        # Create the user table if it doesn't already exist
+
+        UserDB.__cursor.execute('''
+            SELECT count(name) FROM sqlite_master WHERE type='table' AND name='users';
+            ''')
+        
+        if UserDB.__cursor.fetchone()[0] != 1:
+
+            UserDB.__cursor.execute('''
+                CREATE TABLE users(
+                USERNAME TEXT PRIMARY KEY NOT NULL,
+                REALNAME TEXT NOT NULL,
+                PASSWORD TEXT NOT NULL
+                );
+                ''')
+        
+        # Create the admin entry if it doesn't already exist
+
+        UserDB.__cursor.execute('''
+            SELECT count(username) FROM users WHERE username='admin';
+            ''')
+        
+        if UserDB.__cursor.fetchone()[0] != 1:
+
+            UserDB.__cursor.execute('''
+                INSERT INTO users VALUES
+                    ('admin', 'Administrator', 'pass');
+                ''')
+        
+        # Set admin entry as protected
+
+        UserDB.__protected_users.add("admin")
+        
+        UserDB.__connection.commit()
+    
+    def close():
+
+        UserDB.__connection.commit()
+        UserDB.__connection.close()
 
     def exists(username):
 
-        print(UserDB.__users)
+        try:
 
-        return UserDB.__users.get(username, None) is not None
+            UserDB.__cursor.execute('''
+                SELECT count(username) FROM users WHERE username=?;
+                ''', username)
+            
+            return UserDB.__cursor.fetchone()[0] == 1
+        
+        except OperationalError as op_e:
+
+            print(f"Caution: Operational Error found when checking if entry {username} exists")
+            print("DETAILS:", op_e)
 
     def get_password(username):
 
-        desired = UserDB.__users.get(username, None)
+        if UserDB.exists(username):
 
-        if desired is not None:
+            try:
 
-            return desired[1]
-    
+                UserDB.__cursor.execute('''
+                    SELECT password FROM users WHERE username=?;
+                    ''', username)
+                
+                return UserDB.__cursor.fetchone()[0]
+            
+            except OperationalError as op_e:
+
+                print(f"Caution: Operational Error found when checking if entry {username} exists")
+                print("DETAILS:", op_e)
+        
         return None
 
     def get_realname(username):
 
-        desired = UserDB.__users.get(username, None)
+        if UserDB.exists(username):
 
-        if desired is not None:
+            try:
 
-            return desired[0]
+                UserDB.__cursor.execute('''
+                    SELECT realname FROM users WHERE username=?;
+                    ''', username)
+                
+                return UserDB.__cursor.fetchone()[0]
+            
+            except OperationalError as op_e:
+
+                print(f"Caution: Operational Error found when checking if entry {username} exists")
+                print("DETAILS:", op_e)
     
         return None
 
     def add(realname, username, password):
 
-        UserDB.__users[username] = (realname, password)
+        try:
+
+            UserDB.__cursor.execute('''
+                INSERT INTO users VALUES
+                    (?, ?, ?);
+                ''', (username, realname, password))
+            
+            UserDB.__connection.commit()
+        
+        except OperationalError as op_e:
+
+            print(f"Caution: Operational Error found when adding entry {username} to database")
+            print("DETAILS:", op_e)
 
     def remove(username):
 
-        if UserDB.exists(username) and username != "admin":
+        if UserDB.exists(username) and username not in UserDB.__protected_users:
 
-            UserDB.__users.pop(username)
-    
-    
+            try:
+                
+                UserDB.__cursor.execute('''
+                    DELETE FROM users WHERE username=?;
+                    ''', username)
+                
+                UserDB.__connection.commit()
+            
+            except OperationalError as op_e:
+
+                print(f"Caution: Operational Error found when removing entry {username} from database")
+                print("DETAILS:", op_e)
 
 class LoginForm(FlaskForm):
 
@@ -171,3 +272,12 @@ def delete():
         UserDB.remove(username)
 
     return redirect(url_for("login"))
+
+if __name__ == "__main__":
+
+    UserDB.initialise()
+
+    app.run(host="0.0.0.0", port=5000)
+
+    UserDB.close()
+
