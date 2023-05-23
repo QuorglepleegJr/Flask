@@ -320,7 +320,7 @@ def admin():
 
             info = UserDB.get_all_records()
 
-            return render_template("admin.html", users=info)
+            return render_template("admin.html", users=info, user=session['username'])
     
     return redirect(url_for("login"))
 
