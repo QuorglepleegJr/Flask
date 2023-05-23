@@ -211,7 +211,7 @@ class GraphDB():
         print(adj_list)
 
         distances = [inf] * self.__num_vertices
-        distances[0] = 0
+        distances[start] = 0
 
         parents = [None] * self.__num_vertices
 
@@ -225,7 +225,11 @@ class GraphDB():
 
             for adj in adj_list[current]:
 
+                print(current, adj)
+
                 if not final[adj[0]]:
+
+                    print(distances[current] + adj[1] , distances[adj[0]])
 
                     if distances[current] + adj[1] < distances[adj[0]]:
 
@@ -246,11 +250,15 @@ class GraphDB():
 
                 path = [current]
 
-                while path[0] != start:
+                while path[0] is not None:
+
+                    print(path)
 
                     path = [parents[current],] + path
+
+                    current = parents[current]
                 
-                return distance, path
+                return distance, path[1:]
         
         return distances, parents
 
