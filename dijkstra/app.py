@@ -316,7 +316,7 @@ def modify():
             if not app.graph.node_exists(node_input):
 
                 return render_template("mod.html", form=modify_weight_form, \
-                    error=f"One or more endpoint of the edge is not a valid node ID, \
+                    error=f"One or more endpoint(s) of the edge is not a valid node ID, \
                         must be between 0 and {app.graph.get_num_vertices()}")
 
         w = modify_weight_form.weight.data
