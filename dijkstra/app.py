@@ -317,7 +317,7 @@ def modify():
 
                 return render_template("mod.html", form=modify_weight_form, \
                     error=f"One or more endpoint of the edge is not a valid node ID, \
-                        must be betwee 0 and {app.graph.get_num_vertices()}")
+                        must be between 0 and {app.graph.get_num_vertices()}")
 
         w = modify_weight_form.weight.data
 
