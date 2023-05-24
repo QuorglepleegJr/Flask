@@ -175,6 +175,10 @@ class GraphDB():
     def edge_exists(self, a, b):
 
         return (a,b) in self.__edges
+
+    def node_exists(self, node):
+
+        return self.get_node_index(node) is not None
     
     def get_node_index(self, node):
 
@@ -186,7 +190,7 @@ class GraphDB():
             
             return None
         
-        if node < self.__num_vertices:
+        if node < self.__num_vertices and node >= 0:
 
             return node
         
@@ -272,18 +276,10 @@ class GraphDB():
 
 # Form Requirements
 
-def node_id_validator(form, field):
-
-    #print("Checking validation", field)
-
-    #if field.data < 0 or field.data >= app.graph.get_num_vertices():
-
-        raise ValidationError(f"Must be a valid node id, ranging up to {app.graph.get_num_vertices()}")
-
 class ModifyWeightForm(FlaskForm):
 
-    edge_one_id = IntegerField(label="First edge ID:",validators=[validators.InputRequired(),node_id_validator])
-    edge_two_id = IntegerField(label="Second edge ID:",validators=[validators.InputRequired(),node_id_validator])
+    edge_one_id = IntegerField(label="Edge start ID:",validators=[validators.InputRequired()])
+    edge_two_id = IntegerField(label="Edge end ID:",validators=[validators.InputRequired()])
     weight = IntegerField(label="Weight:",validators=[validators.NumberRange(min=0), validators.InputRequired()])
     submit = SubmitField(label="Modify")
 
@@ -314,7 +310,21 @@ def modify():
 
         a = modify_weight_form.edge_one_id.data
         b = modify_weight_form.edge_two_id.data
+
+        for node_input in (a,b):
+
+            if not app.graph.node_exists(node_input):
+
+                return render_template("mod.html", form=modify_weight_form, \
+                    error=f"One or more endpoint of the edge is not a valid node ID, \
+                        must be betwee 0 and {app.graph.get_num_vertices()}")
+
         w = modify_weight_form.weight.data
+
+        if not isinstance(w, int) or w < 0:
+
+            return render_template("mod.html", form=modify_weight_form, \
+                    error=f"The weight must be a non-negative integer.")
 
         app.graph.update_edge(a, b, w)
 
@@ -322,7 +332,7 @@ def modify():
 
         return redirect(url_for("success"))
 
-    return render_template("mod.html", form=modify_weight_form)
+    return render_template("mod.html", form=modify_weight_form, error="")
 
 
 if __name__ == "__main__":
