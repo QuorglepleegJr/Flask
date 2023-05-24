@@ -1,11 +1,13 @@
-from flask import Flask, request, session, redirect, url_for
+from flask import Flask, request, session, redirect, url_for, render_template
 from flask_wtf import FlaskForm
-from wtforms import SubmitField, IntegerRangeField, SelectField
+from wtforms import SubmitField, IntegerField, validators, ValidationError
 
 from math import inf
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'aoi01ngoaus82'
+
+'''Backend'''
 
 # HeapPriorityQueue is a required supporting class for the dijkstra capabilities of the graph
 
@@ -126,6 +128,10 @@ class GraphDB():
         else:
 
             self.__edges = {(edge[0],edge[1]):edge[2] for edge in edges}
+
+    def get_num_vertices(self):
+
+        return self.__num_vertices
     
     def add_node(self, name=None, connections=None):
 
@@ -262,21 +268,64 @@ class GraphDB():
         
         return distances, parents
 
+'''Front end'''
+
+# Form Requirements
+
+def node_id_validator(form, field):
+
+    #print("Checking validation", field)
+
+    #if field.data < 0 or field.data >= app.graph.get_num_vertices():
+
+        raise ValidationError(f"Must be a valid node id, ranging up to {app.graph.get_num_vertices()}")
+
 class ModifyWeightForm(FlaskForm):
 
-    edge_one_id = IntegerRangeField()
-    #edge_one_name = SelectField()
-    edge_two_id = IntegerRangeField
-    #edge_two_name = SelectField()
+    edge_one_id = IntegerField(label="First edge ID:",validators=[validators.InputRequired(),node_id_validator])
+    edge_two_id = IntegerField(label="Second edge ID:",validators=[validators.InputRequired(),node_id_validator])
+    weight = IntegerField(label="Weight:",validators=[validators.NumberRange(min=0), validators.InputRequired()])
+    submit = SubmitField(label="Modify")
 
+# Routes
 
 @app.route('/')
 def home():
 
-    return ''''''
+    return render_template("home.html")
+
+@app.route('/success')
+def success():
+
+    if 'last_action' in session:
+
+        print(app.graph.adj_list())
+
+        return render_template("success.html", action=session['last_action'])
+    
+    return redirect(url_for("home"))
+
+@app.route('/mod', methods=['GET','POST'])
+def modify():
+
+    modify_weight_form = ModifyWeightForm()
+
+    if modify_weight_form.is_submitted():
+
+        a = modify_weight_form.edge_one_id.data
+        b = modify_weight_form.edge_two_id.data
+        w = modify_weight_form.weight.data
+
+        app.graph.update_edge(a, b, w)
+
+        session['last_action'] = f"Edge between {a} and {b} set to weight {w}"
+
+        return redirect(url_for("success"))
+
+    return render_template("mod.html", form=modify_weight_form)
 
 
-g = GraphDB(4, edges=((0,1,5),(1,2,3),(2,3,10),(3,0,1),(0,2,3),(1,3,8)))
+if __name__ == "__main__":
 
-print(g.dijkstra())
-print(g.dijkstra(1,0))
+    app.graph = GraphDB(4, edges=((0,1,5),(1,2,3),(2,3,10),(3,0,1),(0,2,3),(1,3,8)))
+    app.run()
