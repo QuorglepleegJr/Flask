@@ -14,12 +14,18 @@
 <body>
     
     <div class="container">
-        <h5>Welcome to the Online Weighted Graph Simulator</h5>
+        <h5>Current graph</h5>
         <p>
-            What would you like to do?<br>
-            <a href="mod">Modify an edge's weight.</a><br>
-            <a href="dij">Get the shortest path between two nodes</a><br>
-            <a href="show">Display the current graph</a>
+            Format: node | connecting(weight)<br>
+            {% for node in adj_list %}
+                {{ loop.index-1 }} |
+                {% for connecting in node %}
+                    {{ connecting[0] }}({{ connecting[1] }})
+                {% endfor %}
+                <br>
+            {% endfor %} 
+
+            <a href="..">Go back.</a>
         </p>
     </div>
 

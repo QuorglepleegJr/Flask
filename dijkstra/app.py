@@ -111,12 +111,22 @@ class GraphDB():
     Modularily designed, with multiple instances and stored databases in mind.
     '''
 
-    def __init__(self, n, edges=None, names=None):
+    instances = {}
+
+    def __init__(self, n, edges=None, names=None, name=None):
+
+        if name is None:
+
+            name = str(len(GraphDB.instances))
+        
+        GraphDB.instances[name] = self
 
         self.__num_vertices = n
+
         if names is None:
 
             names = [None] * n
+        
         self.__vertices = [names[i] if names[i] is not None \
                         else i for i in range(n)]
         self.__name_indeces = {names[i]:i for i in range(n) \
@@ -212,13 +222,9 @@ class GraphDB():
 
     def dijkstra(self, start=0, end=None):
 
-        print(start, end)
-
         visit_q = HeapPriorityQueue(len(self.__edges))
 
         adj_list = self.adj_list()
-
-        print(adj_list)
 
         distances = [inf] * self.__num_vertices
         distances[start] = 0
@@ -235,11 +241,7 @@ class GraphDB():
 
             for adj in adj_list[current]:
 
-                print(current, adj)
-
                 if not final[adj[0]]:
-
-                    print(distances[current] + adj[1] , distances[adj[0]])
 
                     if distances[current] + adj[1] < distances[adj[0]]:
 
@@ -252,8 +254,6 @@ class GraphDB():
 
             final[current] = True
 
-            print(current, end)
-
             if current == end:
 
                 distance = distances[current]
@@ -261,8 +261,6 @@ class GraphDB():
                 path = [current]
 
                 while path[0] is not None:
-
-                    print(path)
 
                     path = [parents[current],] + path
 
@@ -300,8 +298,6 @@ def home():
 def success():
 
     if 'last_action' in session:
-
-        print(app.graph.adj_list())
 
         return render_template("success.html", action=session['last_action'])
     
@@ -379,6 +375,11 @@ def dij_page():
                         action="Get the shortest path between two nodes", \
                         form=get_shortest_path_form, \
                         error="")
+
+@app.route("/show")
+def display():
+
+    return render_template("display.html", adj_list=app.graph.adj_list())
 
 
 if __name__ == "__main__":
