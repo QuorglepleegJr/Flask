@@ -1,6 +1,6 @@
 from flask import Flask, request, session, redirect, url_for, render_template
 from flask_wtf import FlaskForm
-from wtforms import SubmitField, IntegerField, validators, ValidationError
+from wtforms import SubmitField, IntegerField, validators, StringField
 
 from math import inf
 
@@ -112,6 +112,14 @@ class GraphDB():
     '''
 
     instances = {}
+
+    def get(name):
+
+        return GraphDB.instances.get(name)
+    
+    def create(n, edges=None, names=None, name=None):
+
+        return GraphDB(n, edges, names, name)
 
     def __init__(self, n, edges=None, names=None, name=None):
 
@@ -287,12 +295,47 @@ class GetShortestPathForm(FlaskForm):
     node_two_id = IntegerField(label="End:",validators=[validators.InputRequired()])
     submit = SubmitField(label="Go")
 
+class GraphSwitchForm(FlaskForm):
+
+    name = StringField(label="Name:", validators=[validators.InputRequired()])
+    submit = SubmitField(label="Switch to graph")
+
 # Routes
 
 @app.route('/')
 def home():
 
+    if 'graph' not in session:
+
+        return redirect(url_for("change_graph"))
+
     return render_template("home.html")
+
+@app.route('/change', methods=['GET','POST'])
+def change_graph():
+
+    graph_switch_form = GraphSwitchForm()
+
+    if graph_switch_form.is_submitted:
+
+        name = graph_switch_form.name.data
+
+        if GraphDB.get(name) is not None:
+
+            session['graph'] = name
+            session['last_action'] = (f"Switched to graph {name}",)
+
+            return redirect(url_for("success"))
+        
+        return render_template("form.html", \
+                action="Change to viewing a different graph", \
+                form=graph_switch_form, \
+                error=f"Graph {name} does not exist")
+    
+    return render_template("form.html", \
+            action="Change to viewing a different graph", \
+            form=graph_switch_form, \
+            error=f"Graph {name} does not exist")
 
 @app.route('/success')
 def success():
@@ -315,13 +358,13 @@ def modify():
 
         for node_input in (a,b):
 
-            if not app.graph.node_exists(node_input):
+            if not GraphDB.get(session['graph']).node_exists(node_input):
 
                 return render_template("form.html", \
                         action="Modify an edge's weight", \
                         form=modify_weight_form, \
                         error=f"One or more endpoint(s) of the edge is not a valid node ID, \
-                        must be between 0 and {app.graph.get_num_vertices()}")
+                        must be between 0 and {GraphDB.get(session['graph']).get_num_vertices()}")
 
         w = modify_weight_form.weight.data
 
@@ -332,9 +375,9 @@ def modify():
                     form=modify_weight_form, \
                     error=f"The weight must be a non-negative integer.")
 
-        app.graph.update_edge(a, b, w)
+        GraphDB.get(session['graph']).update_edge(a, b, w)
 
-        session['last_action'] = [f"Edge between {a} and {b} set to weight {w}",]
+        session['last_action'] = (f"Edge between {a} and {b} set to weight {w}",)
 
         return redirect(url_for("success"))
 
@@ -355,19 +398,19 @@ def dij_page():
 
         for node_input in (a,b):
 
-            if not app.graph.node_exists(node_input):
+            if not GraphDB.get(session['graph']).node_exists(node_input):
 
                 return render_template("form.html", \
                         action="Get the shortest path between two nodes", \
                         form=get_shortest_path_form, \
                         error=f"One or more endpoint(s) of the edge is not a valid node ID, \
-                        must be between 0 and {app.graph.get_num_vertices()}")
+                        must be between 0 and {GraphDB.get(session['graph']).get_num_vertices()}")
             
-        shortest_path = app.graph.dijkstra(a, b)
+        shortest_path = GraphDB.get(session['graph']).dijkstra(a, b)
 
-        session['last_action'] = [f"Path between {a} and {b} is as follows:",
+        session['last_action'] = (f"Path between {a} and {b} is as follows:",
                                 f"Weight: {shortest_path[0]}",
-                                f"Path: {' -> '.join([str(n) for n in shortest_path[1]])}",]
+                                f"Path: {' -> '.join([str(n) for n in shortest_path[1]])}",)
         
         return redirect(url_for("success"))
 
@@ -379,10 +422,11 @@ def dij_page():
 @app.route("/show")
 def display():
 
-    return render_template("display.html", adj_list=app.graph.adj_list())
+    return render_template("display.html", adj_list=GraphDB.get(session['graph']).adj_list())
 
 
 if __name__ == "__main__":
 
-    app.graph = GraphDB(4, edges=((0,1,5),(1,2,3),(2,3,10),(3,0,1),(0,2,3),(1,3,8)))
+    GraphDB.create(4, edges=((0,1,5),(1,2,3),(2,3,10),(3,0,1),(0,2,3),(1,3,8)), name="Main")
+    GraphDB.create(3, edges=((0,1,10),(1,2,3),(2,0,5),(1,0,8),(2,1,9),(0,2,13)), name="Small")
     app.run()
