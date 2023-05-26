@@ -14,14 +14,28 @@
 <body>
     
     <div class="container">
-        <h5>Welcome to the Online Weighted Graph Simulator</h5>
-        <p>
-            What would you like to do?<br>
-            <a href="mod">Modify an edge's weight.</a><br>
-            <a href="dij">Get the shortest path between two nodes</a>
-        </p>
-    </div>
 
+        <h5>{{ action }}</h5>
+        <p>
+
+            {{ error }}
+
+            <form action="" method="POST" class="form-inline">
+
+                {{ form.csrf }}
+                
+                {% for field in form if field.widget.input_type != 'hidden' and field.widget.input_type != 'submit' %}
+                    {{ field.label }}
+                    {{ field }}
+                {% endfor %}
+
+                {{ form.submit }}
+            
+            </form>
+            <a href="..">Go back.</a>
+        </p>
+
+    </div>
 
     <!-- Compiled and minified JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>

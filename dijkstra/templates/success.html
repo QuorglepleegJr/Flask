@@ -15,7 +15,11 @@
     
     <div class="container">
         <h5>Your action has been successful!</h5>
-        <p>{{ action }}</p>
+        <p>
+            {% for detail in action %}
+                {{ detail }}<br>
+            {% endfor %}
+        </p>
         <a href=".." class="btn">Great!</a>
     </div>
 

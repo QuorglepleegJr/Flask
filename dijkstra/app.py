@@ -278,10 +278,16 @@ class GraphDB():
 
 class ModifyWeightForm(FlaskForm):
 
-    edge_one_id = IntegerField(label="Edge start ID:",validators=[validators.InputRequired()])
-    edge_two_id = IntegerField(label="Edge end ID:",validators=[validators.InputRequired()])
+    edge_start_id = IntegerField(label="Edge start ID:",validators=[validators.InputRequired()])
+    edge_end_id = IntegerField(label="Edge end ID:",validators=[validators.InputRequired()])
     weight = IntegerField(label="Weight:",validators=[validators.NumberRange(min=0), validators.InputRequired()])
     submit = SubmitField(label="Modify")
+
+class GetShortestPathForm(FlaskForm):
+
+    node_one_id = IntegerField(label="Start:",validators=[validators.InputRequired()])
+    node_two_id = IntegerField(label="End:",validators=[validators.InputRequired()])
+    submit = SubmitField(label="Go")
 
 # Routes
 
@@ -308,31 +314,71 @@ def modify():
 
     if modify_weight_form.is_submitted():
 
-        a = modify_weight_form.edge_one_id.data
-        b = modify_weight_form.edge_two_id.data
+        a = modify_weight_form.edge_start_id.data
+        b = modify_weight_form.edge_end_id.data
 
         for node_input in (a,b):
 
             if not app.graph.node_exists(node_input):
 
-                return render_template("mod.html", form=modify_weight_form, \
-                    error=f"One or more endpoint(s) of the edge is not a valid node ID, \
+                return render_template("form.html", \
+                        action="Modify an edge's weight", \
+                        form=modify_weight_form, \
+                        error=f"One or more endpoint(s) of the edge is not a valid node ID, \
                         must be between 0 and {app.graph.get_num_vertices()}")
 
         w = modify_weight_form.weight.data
 
         if not isinstance(w, int) or w < 0:
 
-            return render_template("mod.html", form=modify_weight_form, \
+            return render_template("form.html",
+                    action="Modify an edge's weight", \
+                    form=modify_weight_form, \
                     error=f"The weight must be a non-negative integer.")
 
         app.graph.update_edge(a, b, w)
 
-        session['last_action'] = f"Edge between {a} and {b} set to weight {w}"
+        session['last_action'] = [f"Edge between {a} and {b} set to weight {w}",]
 
         return redirect(url_for("success"))
 
-    return render_template("mod.html", form=modify_weight_form, error="")
+    return render_template("form.html", \
+            action="Modify an edge's weight", \
+            form=modify_weight_form, \
+            error="")
+
+@app.route('/dij', methods=['GET','POST'])
+def dij_page():
+
+    get_shortest_path_form = GetShortestPathForm()
+
+    if get_shortest_path_form.is_submitted():
+
+        a = get_shortest_path_form.node_one_id.data
+        b = get_shortest_path_form.node_two_id.data
+
+        for node_input in (a,b):
+
+            if not app.graph.node_exists(node_input):
+
+                return render_template("form.html", \
+                        action="Get the shortest path between two nodes", \
+                        form=get_shortest_path_form, \
+                        error=f"One or more endpoint(s) of the edge is not a valid node ID, \
+                        must be between 0 and {app.graph.get_num_vertices()}")
+            
+        shortest_path = app.graph.dijkstra(a, b)
+
+        session['last_action'] = [f"Path between {a} and {b} is as follows:",
+                                f"Weight: {shortest_path[0]}",
+                                f"Path: {' -> '.join([str(n) for n in shortest_path[1]])}",]
+        
+        return redirect(url_for("success"))
+
+    return render_template("form.html", \
+                        action="Get the shortest path between two nodes", \
+                        form=get_shortest_path_form, \
+                        error="")
 
 
 if __name__ == "__main__":
